@@ -1,0 +1,36 @@
+library(cascsim)
+claiminput <- read.csv("C:/Users/jayas/OneDrive/Documents/ACIAModule2/MOD_D2_acia_short_model_data.csv", header = TRUE, sep = ",")
+wd="C:/Users/jayas/OneDrive/Documents/ACIAModule2/wd"
+
+lines <- c("Property","Property","Liab","Liab")
+types <- c("N","H","N","H")
+status <- c("Closed","Open")
+lines <- unique(lines)
+types <- unique(types)
+
+# Define a custom class for ClaimType
+ClaimType <- setClass("ClaimType",slots = c(line = "character",claimType = "character", iCopula = "logical"))
+
+# Set up combinations of line Property, type N with default assumptions.
+PropertyN<-new("ClaimType", line = "Property", claimType  = "N", iCopula = TRUE)
+PropertyH<-new("ClaimType", line = "Property", claimType = "H", iCopula = TRUE)
+LiabN<-new("ClaimType", line = "Liab", claimType = "N", iCopula = TRUE)
+LiabH<-new("ClaimType", line = "Liab", claimType = "H", iCopula = TRUE)
+
+# Add combinations of LoB and Type objects to be analyzed using the fitting process
+objlist <- list(PropertyN,PropertyH,LiabN,LiabH)
+
+# Initialize simulation object with default values
+simobj <- new("Simulation",lines=lines,types=types,claimobjs=objlist,workingFolder= wd)
+# Set if frequency copula should be considered, and the default copula for frequency copula initialization
+simobj@iCopula <- TRUE
+simobj@freqCopula <-new("CopulaObj", type ="normal", dimension =2, param = c(0.0))
+# Perform claim fitting
+simobj <- claimFitting(simobj,claiminput, startDate = as.Date("2017-01-01"),evaluationDate = as.Date("2021-12-31"),discreteDist = c("Poisson","NegativeBinomial","Geometric"), continuousDist = c("Normal","Lognormal","Pareto","Weibull", "Gamma","Uniform","Exponential"), copulaList = c("normal","clayton","gumbel","frank","joe", "t")) 
+# Print the distribution fitting summary
+print(simobj@fitsummary)
+write.csv(simobj@fitsummary, file = "summary.csv", row.names = FALSE)
+
+
+
+
